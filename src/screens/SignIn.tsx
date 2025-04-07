@@ -1,20 +1,38 @@
-import { Center, Heading, Image, ScrollView, Text, VStack } from "@gluestack-ui/themed";
+import {
+  Center,
+  Heading,
+  Image,
+  ScrollView,
+  Text,
+  VStack,
+} from '@gluestack-ui/themed'
+import { useNavigation } from '@react-navigation/native'
 
-import BackgroundImg from "@assets/background.png"
-import Logo from "@assets/logo.svg"
-import { Input } from "@components/Input";
-import { Button } from "@components/Button";
+import BackgroundImg from '@assets/background.png'
+import Logo from '@assets/logo.svg'
+import { Input } from '@components/Input'
+import { Button } from '@components/Button'
+import { AuthNavigationRoutesProps } from '@routes/auth.routes'
 
 export function SignIn() {
+  const navigator = useNavigation<AuthNavigationRoutesProps>()
+
+  function handleNavigateToSignUp() {
+    navigator.navigate('signUp')
+  }
+
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
-      <VStack flex={1} bg="$gray700">
-        <Image 
-          w="$full" 
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <VStack flex={1}>
+        <Image
+          w="$full"
           h={624}
-          source={BackgroundImg} 
-          defaultSource={BackgroundImg} 
-          alt="Pessoas treinando" 
+          source={BackgroundImg}
+          defaultSource={BackgroundImg}
+          alt="Pessoas treinando"
           position="absolute"
         />
 
@@ -30,7 +48,11 @@ export function SignIn() {
           <Center gap="$2">
             <Heading color="$gray100">Acesse a conta</Heading>
 
-            <Input placeholder="E-mail" keyboardType="email-address" autoCapitalize="none" />
+            <Input
+              placeholder="E-mail"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
             <Input placeholder="Senha" secureTextEntry />
 
             <Button title="Acessar" />
@@ -41,11 +63,10 @@ export function SignIn() {
               Ainda não tem acesso?
             </Text>
 
-            <Button title="Criar conta" variant="outline" />
+            <Button title="Criar conta" variant="outline" onPress={handleNavigateToSignUp} />
           </Center>
         </VStack>
-
       </VStack>
     </ScrollView>
-  );
+  )
 }
