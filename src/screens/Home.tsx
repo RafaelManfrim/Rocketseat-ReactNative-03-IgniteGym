@@ -1,11 +1,13 @@
-import { Center, Text } from "@gluestack-ui/themed";
+import { HomeHeader } from "@components/HomeHeader";
+import { Text, VStack } from "@gluestack-ui/themed";
 
 export function Home() {
   return (
-    <Center flex={1} >
+    <VStack flex={1}>
+      <HomeHeader />
       <Text>
         Home Screen
       </Text>
-    </Center>
+    </VStack>
   )
 }
