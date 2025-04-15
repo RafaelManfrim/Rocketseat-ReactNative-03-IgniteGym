@@ -4,6 +4,8 @@ import { HomeHeader } from "@components/HomeHeader";
 import { Text } from "@gluestack-ui/themed";
 import { Heading } from "@gluestack-ui/themed";
 import { HStack, VStack } from "@gluestack-ui/themed";
+import { useNavigation } from "@react-navigation/native";
+import { AppNavigationRoutesProps } from "@routes/app.routes";
 import { useState } from "react";
 import { FlatList } from "react-native";
 
@@ -79,6 +81,12 @@ export function Home() {
     },
   ]);
 
+  const navigation = useNavigation<AppNavigationRoutesProps>();
+
+  function handleOpenExerciseDetails() {
+    navigation.navigate('exercise');
+  }
+
   return (
     <VStack flex={1}>
       <HomeHeader />
@@ -114,7 +122,7 @@ export function Home() {
           data={exercises}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <ExerciseCard key={item.id} />
+            <ExerciseCard key={item.id} onPress={handleOpenExerciseDetails} />
           )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 20 }}
