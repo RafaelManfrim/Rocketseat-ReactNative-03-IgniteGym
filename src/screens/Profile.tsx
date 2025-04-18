@@ -1,11 +1,63 @@
-import { Button } from "@components/Button";
-import { Input } from "@components/Input";
-import { ScreenHeader } from "@components/ScreenHeader";
-import { UserPhoto } from "@components/UserPhoto";
-import { Center, Heading, Text, VStack } from "@gluestack-ui/themed";
+import { useState } from "react";
+import * as FileSystem from "expo-file-system";
+import * as ImagePicker from "expo-image-picker";
 import { ScrollView, TouchableOpacity } from "react-native";
+import { Center, Heading, Text, VStack, useToast } from "@gluestack-ui/themed";
+
+import { Input } from "@components/Input";
+import { Button } from "@components/Button";
+import { UserPhoto } from "@components/UserPhoto";
+import { ScreenHeader } from "@components/ScreenHeader";
+import { ToastMessage } from "@components/ToastMessage";
 
 export function Profile() {
+  const [userPhoto, setUserPhoto] = useState("https://github.com/rafaelmanfrim.png");
+
+  const toast = useToast();
+
+  async function handleUserPhotoSelect() {
+    try {
+
+      const photoSelected = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        quality: 1,
+        aspect: [4, 4],
+        allowsEditing: true,
+      })
+  
+      if (photoSelected.canceled) {
+        return;
+      }
+  
+      const photoUri = photoSelected.assets[0].uri;
+  
+      if (photoUri) {
+        const fileInfo = await FileSystem.getInfoAsync(photoUri) as {
+          size: number;
+        }
+  
+        if (fileInfo.size && (fileInfo.size / 1024 / 1024) > 5) {
+          return toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <ToastMessage 
+                id={id} 
+                action="error"
+                title="Imagem muito grande" 
+                description="Escolha uma de até 5MB."
+                onClose={() => toast.close(id)}
+              />
+            )
+          })
+        }
+  
+        setUserPhoto(photoUri);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   return (
     <VStack flex={1}>
       <ScreenHeader title="Perfil" />
@@ -13,12 +65,12 @@ export function Profile() {
       <ScrollView contentContainerStyle={{ paddingBottom: 36 }}>
         <Center mt="$6" px="$10">
           <UserPhoto 
-            source={{ uri: "https://github.com/rafaelmanfrim.png" }}
+            source={{ uri: userPhoto }}
             alt="Foto de perfil do usuário"
             size="xl"
           />
 
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleUserPhotoSelect}>
             <Text
               color="$green500"
               fontFamily="$heading"
