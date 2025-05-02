@@ -5,6 +5,7 @@ import {
   Pressable,
   Icon,
   VStack,
+  HStack,
 } from '@gluestack-ui/themed'
 
 import { X } from 'lucide-react-native'
@@ -32,13 +33,14 @@ export function ToastMessage({
       mt="$10"
     >
       <VStack space="xs" w="$full">
-        <Pressable alignSelf="flex-end" onPress={onClose}>
-          <Icon as={X} color="$coolGray50" size="md" />
-        </Pressable>
-
-        <ToastTitle color="$white" fontFamily="$heading">
-          {title}
-        </ToastTitle>
+        <HStack w="$full" justifyContent="space-between" alignItems="center">
+          <ToastTitle color="$white" fontFamily="$heading">
+            {title}
+          </ToastTitle>
+          <Pressable onPress={onClose}>
+            <Icon as={X} color="$coolGray50" size="md" />
+          </Pressable>
+        </HStack>
 
         {description && (
           <ToastDescription color="$white" fontFamily="$body">
