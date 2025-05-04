@@ -4,6 +4,7 @@ import {
   Image,
   ScrollView,
   Text,
+  useToast,
   VStack,
 } from '@gluestack-ui/themed'
 import { useNavigation } from '@react-navigation/native'
@@ -16,6 +17,10 @@ import Logo from '@assets/logo.svg'
 import { Input } from '@components/Input'
 import { Button } from '@components/Button'
 import { AuthNavigationRoutesProps } from '@routes/auth.routes'
+import { useAuth } from '@hooks/useAuth';
+import { AppError } from '@utils/AppError';
+import { ToastMessage } from '@components/ToastMessage';
+import { useState } from 'react';
 
 type FormDataProps = {
   email: string;
@@ -28,9 +33,14 @@ const signInSchema = yup.object({
 })
 
 export function SignIn() {
+  const [isLoading, setIsLoading] = useState(false)
+
   const { control, handleSubmit, formState } = useForm<FormDataProps>({
     resolver: yupResolver(signInSchema),
   })
+
+  const { signIn } = useAuth()
+  const toast = useToast()
 
   const navigator = useNavigation<AuthNavigationRoutesProps>()
 
@@ -38,8 +48,28 @@ export function SignIn() {
     navigator.navigate('signUp')
   }
 
-  function handleSignIn(data: FormDataProps) {
-    console.log(data);
+  async function handleSignIn({ email, password }: FormDataProps) {
+    try {
+      setIsLoading(true)
+      await signIn(email, password)
+    } catch (error) {
+      const isAppError = error instanceof AppError
+      const title = isAppError ? error.message : "Não foi possível entrar. Tente novamente mais tarde."
+
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <ToastMessage
+            id={id} 
+            action="error"
+            title={title}
+            onClose={() => toast.close(id)}
+          />
+        )
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -100,7 +130,11 @@ export function SignIn() {
               )}
             />
 
-            <Button title="Acessar" onPress={handleSubmit(handleSignIn)} />
+            <Button 
+              title="Acessar" 
+              isLoading={isLoading}
+              onPress={handleSubmit(handleSignIn)} 
+            />
           </Center>
 
           <Center flex={1} justifyContent="flex-end" mt="$4">
