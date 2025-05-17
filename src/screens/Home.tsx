@@ -1,91 +1,95 @@
 import { ExerciseCard } from "@components/ExerciseCard";
 import { Group } from "@components/Group";
 import { HomeHeader } from "@components/HomeHeader";
-import { Text } from "@gluestack-ui/themed";
+import { Loading } from "@components/Loading";
+import { ToastMessage } from "@components/ToastMessage";
+import { ExerciseDTO } from "@dtos/ExerciseDTO";
+import { Text, useToast } from "@gluestack-ui/themed";
 import { Heading } from "@gluestack-ui/themed";
 import { HStack, VStack } from "@gluestack-ui/themed";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { AppNavigationRoutesProps } from "@routes/app.routes";
-import { useState } from "react";
+import { api } from "@services/api";
+import { AppError } from "@utils/AppError";
+import { useCallback, useEffect, useState } from "react";
 import { FlatList } from "react-native";
 
 export function Home() {
-  const [groups, setGroups] = useState([
-    "Costas",
-    "Bíceps",
-    "Tríceps",
-    "Ombro",
-  ]);
-  const [groupSelected, setGroupSelected] = useState('Costas')
+  const [isLoading, setIsLoading] = useState(true);
+  const [groups, setGroups] = useState<string[]>([]);
+  const [groupSelected, setGroupSelected] = useState('antebraço');
 
-  const [exercises, setExercises] = useState([
-    {
-      id: '1',
-      name: 'Supino reto',
-      series: 3,
-      repetitions: 10,
-    },
-    {
-      id: '2',
-      name: 'Supino inclinado',
-      series: 3,
-      repetitions: 10,
-    },
-    {
-      id: '3',
-      name: 'Supino declinado',
-      series: 3,
-      repetitions: 10,
-    },
-    {
-      id: '4',
-      name: 'Supino reto',
-      series: 3,
-      repetitions: 10,
-    },
-    {
-      id: '5',
-      name: 'Supino reto',
-      series: 3,
-      repetitions: 10,
-    },
-    {
-      id: '6',
-      name: 'Supino reto',
-      series: 3,
-      repetitions: 10,
-    },
-    {
-      id: '7',
-      name: 'Supino reto',
-      series: 3,
-      repetitions: 10,
-    },
-    {
-      id: '8',
-      name: 'Supino reto',
-      series: 3,
-      repetitions: 10,
-    },
-    {
-      id: '9',
-      name: 'Supino reto',
-      series: 3,
-      repetitions: 10,
-    },
-    {
-      id: '10',
-      name: 'Supino reto',
-      series: 3,
-      repetitions: 10,
-    },
-  ]);
+  const [exercises, setExercises] = useState<ExerciseDTO[]>([]);
+
+  const toast = useToast()
 
   const navigation = useNavigation<AppNavigationRoutesProps>();
 
-  function handleOpenExerciseDetails() {
-    navigation.navigate('exercise');
+  function handleOpenExerciseDetails(exerciseId: number) {
+    navigation.navigate('exercise', { exerciseId });
   }
+
+  async function fetchGroups() {
+    try {
+      const response = await api.get('/groups');
+      setGroups(response.data);
+
+    } catch (error) {
+      console.log(error);
+
+      const isAppError = error instanceof AppError;
+      const title = isAppError ? error.message : 'Não foi possível carregar os grupos musculares';
+
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <ToastMessage
+            id={id} 
+            action="error"
+            title={title}
+            onClose={() => toast.close(id)}
+          />
+        )
+      })
+    } 
+  }
+
+  async function fetchExercisesByGroup() {
+    try {
+      setIsLoading(true);
+      const response = await api.get(`/exercises/bygroup/${groupSelected}`);
+
+      setExercises(response.data);
+
+    } catch (error) {
+      console.log(error);
+
+      const isAppError = error instanceof AppError;
+      const title = isAppError ? error.message : 'Não foi possível carregar os exercícios';
+
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <ToastMessage
+            id={id} 
+            action="error"
+            title={title}
+            onClose={() => toast.close(id)}
+          />
+        )
+      })
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchGroups();
+  }, [])
+
+  useFocusEffect(useCallback(() => {
+    fetchExercisesByGroup();
+  }, [groupSelected]))
 
   return (
     <VStack flex={1}>
@@ -107,27 +111,35 @@ export function Home() {
         style={{ marginVertical: 40, maxHeight: 44, minHeight: 44 }}
       />
 
-      <VStack flex={1} px="$8">
-        <HStack justifyContent="space-between" alignItems="center" mb="$5">
-          <Heading color="$gray200" fontSize="$md" fontFamily="$heading">
-            Exercícios
-          </Heading>
+      {isLoading ? (
+        <Loading />
+      ) : (
+        <VStack flex={1} px="$8">
+          <HStack justifyContent="space-between" alignItems="center" mb="$5">
+            <Heading color="$gray200" fontSize="$md" fontFamily="$heading">
+              Exercícios
+            </Heading>
 
-          <Text color="$gray200" fontSize="$sm" fontFamily="$body">
-            {exercises.length}
-          </Text>
-        </HStack>
+            <Text color="$gray200" fontSize="$sm" fontFamily="$body">
+              {exercises.length}
+            </Text>
+          </HStack>
 
-        <FlatList 
-          data={exercises}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ExerciseCard key={item.id} onPress={handleOpenExerciseDetails} />
-          )}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
-        />
-      </VStack>
+          <FlatList 
+            data={exercises}
+            keyExtractor={(item) => String(item.id)}
+            renderItem={({ item }) => (
+              <ExerciseCard 
+                key={item.id} 
+                data={item}
+                onPress={() => handleOpenExerciseDetails(item.id)} 
+              />
+            )}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          />
+        </VStack>
+      )}
     </VStack>
   )
 }
